@@ -9,8 +9,8 @@ import collection.JavaConverters._
 
 object Application {
   def main(args: Array[String]) {
-    val samples = List("s3a://platinum-genomes/2017-1.0/hg38/hybrid/hg38.hybrid.vcf.gz")
-    val chromosomes = List("1", "2", "16", "17", "18", "19", "20", "21", "22", "MT", "X", "Y")
+    val samples = Seq("s3a://platinum-genomes/2017-1.0/hg38/hybrid/hg38.hybrid.vcf.gz")
+    val chromosomes = Seq("1", "2", "16", "17", "18", "19", "20", "21", "22", "MT", "X", "Y")
     val cellbaseAnnotations = chromosomes.map(
       c => "s3a://testingsparkannotations/cellbase_annotations/variation_chr" + c + ".full.json.gz"
     )
@@ -20,7 +20,7 @@ object Application {
       .getOrCreate()
     import spark.implicits._
 
-    val vcf = spark.read.textFile(samples.mkString(","))
+    val vcf = spark.read.textFile(samples: _*)
 
     val vcfVariants = vcf
         .filter(line => !line.startsWith("#"))
@@ -30,7 +30,7 @@ object Application {
         .flatMap(variant => variant.alternate.split(",").map(a => variant.copy(alternate = a)))
         .flatMap(cellbaseNormalisation)
 
-    val cellbaseVariants = spark.read.textFile(cellbaseAnnotations.mkString(","))
+    val cellbaseVariants = spark.read.textFile(cellbaseAnnotations: _*)
       .map(line => AnnotatedVariantData(parseVariantDataFromCellbaseJson(line), line))
 
     val annotated = vcfVariants.map(v => UnannotatedVariantData(v))
