@@ -10,10 +10,6 @@ import collection.JavaConverters._
 object Application {
   def main(args: Array[String]) {
     val samples = Seq("s3a://platinum-genomes/2017-1.0/hg38/hybrid/hg38.hybrid.vcf.gz")
-    val chromosomes = Seq("1", "2", "16", "17", "18", "19", "20", "21", "22", "MT", "X", "Y")
-    val cellbaseAnnotations = chromosomes.map(
-      c => "s3a://testingsparkannotations/cellbase_annotations/variation_chr" + c + ".full.json.gz"
-    )
 
     val spark = SparkSession.builder
       .appName("Simple Application")
@@ -30,7 +26,7 @@ object Application {
         .flatMap(variant => variant.alternate.split(",").map(a => variant.copy(alternate = a)))
         .flatMap(cellbaseNormalisation)
 
-    val cellbaseVariants = spark.read.textFile(cellbaseAnnotations: _*)
+    val cellbaseVariants = spark.read.textFile("s3a://testingsparkannotations/spilt_cellbase_annotations/*.gz")
       .map(line => AnnotatedVariantData(parseVariantDataFromCellbaseJson(line), line))
 
     val annotated = vcfVariants.map(v => UnannotatedVariantData(v))
